@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
-
+import { CldImage } from "next-cloudinary";
 export const HoverEffect = ({
   items,
   className,
@@ -13,6 +13,7 @@ export const HoverEffect = ({
     postedby?: string;
     projectname?: string;
     deadline?: string;
+    email:string;
     description?: string;
     title?: string;
   }[];
@@ -54,13 +55,15 @@ export const HoverEffect = ({
 
       <Card className="h-full w-full flex flex-col">
         {/* Image */}
-        {item.image && (
-          <img
-            src={item.image}
-            alt={item.title || "Project image"}
-            className="w-full h-48 object-cover rounded-xl mb-3"
-          />
-        )}
+         <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden rounded-t-xl">
+ <CldImage
+  src={item.image as string} // ✅ type assertion
+  width={800}
+  height={500}
+  alt="Alumni Image"
+  className="h-full w-full object-cover rounded-t-xl"
+/>
+</div>
 
         {/* Title & Description */}
         {item.title && <CardTitle>{item.title}</CardTitle>}
@@ -99,7 +102,7 @@ export const HoverEffect = ({
             View More
           </a>
           <Link
-            href="/applyjob"
+            href={`/applyjob?projectname=${item.title}&email=${item.email}`}
             rel="noopener noreferrer"
             className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition"
           >

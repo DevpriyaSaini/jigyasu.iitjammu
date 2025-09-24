@@ -4,6 +4,7 @@ export interface project {
     projectname:string,
     postedby:string,
     description:string;
+    email:string;
     deadline:string,
     image:string
 }
@@ -22,6 +23,10 @@ const projectschema=new Schema<project>({
         required:true
      },
     description:{
+        type:String,
+        required:true
+     },
+    email:{
         type:String,
         required:true
      },

@@ -6,6 +6,7 @@ export interface User extends Document {
   email: string;
   password: string;
   isVerified: boolean;
+  role?: string;
   VerifyCode?: string;
 }
 
@@ -41,6 +42,10 @@ const userSchema: Schema<User> = new Schema(
     VerifyCode: {
       type: String,
     },
+    role: {
+      type: String,
+      default: "prof",
+    },
   },
   { timestamps: true }
 );
@@ -57,13 +62,8 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Password comparison method
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+
 
 const profModel =
-  mongoose.models.User || mongoose.model<User>("User", userSchema);
+  mongoose.models.professor || mongoose.model<User>("professor", userSchema);
 export default profModel;

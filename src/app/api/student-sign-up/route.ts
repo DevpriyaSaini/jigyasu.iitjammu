@@ -1,8 +1,8 @@
 import { Connectiondb } from "@/lib/dbconnect";
+import studentmodel from "@/model/studentlogin";
 import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import profModel from "@/model/prof";
 
 // Configure nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send mail
-async function sendmail(name: string, email: string, VerifyCode: string) {
+// Function to send OTP email
+async function sendmail(name: string, email: string, otp: string) {
   try {
     const mailOptions = {
       from: process.env.NEXT_PUBLIC_GMAIL_USER,
@@ -23,7 +23,7 @@ async function sendmail(name: string, email: string, VerifyCode: string) {
       html: `
         <h2>Welcome, ${name} 🎉</h2>
         <p>To complete your registration, please use the OTP below:</p>
-        <h3 style="color:blue; font-size:22px;">${VerifyCode}</h3>
+        <h3 style="color:blue; font-size:22px;">${otp}</h3>
         <p>This OTP is valid for <b>10 minutes</b>. If you did not request this, please ignore.</p>
       `,
     };
@@ -37,7 +37,7 @@ async function sendmail(name: string, email: string, VerifyCode: string) {
   }
 }
 
-// ✅ Registration with OTP
+//  Registration with OTP 
 export async function POST(request: NextRequest) {
   await Connectiondb();
 
@@ -52,56 +52,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for existing user
-    const existingUser = await profModel.findOne({
-      email
-    });
+    // Generate OTP and expiry (10 minutes)
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    if (existingUser) {
+    // Check if user exists
+    let user = await studentmodel.findOne({ email });
+
+    if (user) {
+      if (user.isVerified) {
+        return NextResponse.json(
+          { success: false, message: "User already exists" },
+          { status: 400 }
+        );
+      } else {
+        // User exists but not verified: update details
+        user.studentname = studentname;
+        user.password = password;
+        user.VerifyCode = otp;
+        user.VerifyCodeExpiry = otpExpiry;
+        await user.save();
+
+        await sendmail(studentname, email, otp);
+
+        return NextResponse.json(
+          {
+            success: true,
+            message: "OTP resent. Please verify your email.",
+            userId: user._id,
+          },
+          { status: 200 }
+        );
+      }
+    } else {
+      // User does not exist: create new
+      user = await studentmodel.create({
+        studentname,
+        email,
+        password,
+        isVerified: false,
+        VerifyCode: otp,
+        VerifyCodeExpiry: otpExpiry,
+      });
+
+      await sendmail(studentname, email, otp);
+
       return NextResponse.json(
-        { success: false, message: "User already exists" },
-        { status: 400 }
+        {
+          success: true,
+          message: "User registered successfully. OTP sent to email.",
+          userId: user._id,
+        },
+        { status: 200 }
       );
     }
-
-    // Generate OTP token (valid 10 minutes)
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Create new user (unverified at start)
-    const newUser = await profModel.create({
-      studentname,
-      email,
-      password,
-      isVerified: false,
-      VerifyCode: otp,
-      VerifyCodeExpiry: otpExpiry, // ✅ add expiry
-    });
-
-    // Send OTP mail
-    await sendmail(studentname, email, otp);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "User registered successfully. OTP sent to email.",
-        userId: newUser._id,
-      },
-      { status: 200 }
-    );
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Error during registration:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error registering user",
-      },
+      { success: false, message: "Error registering user" },
       { status: 500 }
     );
   }
 }
 
-// ✅ OTP Verification API
+// OTP Verification for Student
 export async function PUT(request: NextRequest) {
   await Connectiondb();
 
@@ -115,8 +129,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const user = await profModel.findOne({ email });
-
+    const user = await studentmodel.findOne({ email });
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
@@ -132,7 +145,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check OTP validity
-    if (user.VerifyCode !== otp || user.VerifyCodeExpiry < new Date()) {
+    if (user.VerifyCode !== otp || !user.VerifyCodeExpiry || user.VerifyCodeExpiry < new Date()) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired OTP" },
         { status: 400 }

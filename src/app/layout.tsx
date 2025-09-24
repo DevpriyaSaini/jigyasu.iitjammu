@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner"
 import { NavbarDemo } from "@/components/navbar";
+import AuthProvider from "./context/AuthProvider";
 
 
 const geistSans = Geist({
@@ -32,13 +33,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
          
-        <ThemeProvider>
+       <AuthProvider>
+         <ThemeProvider>
            <div className="fixed w-full top-0 z-50">
         <NavbarDemo  />
       </div>
           {children}
            <Toaster />
         </ThemeProvider>
+       </AuthProvider>
       </body>
     </html>
   );
