@@ -4,8 +4,14 @@ import { useState } from 'react';
 import ImageUpload from '@/components/ImageUpload';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { useSearchParams } from 'next/navigation';
 
 export default function AlumniForm() {
+  const searchParams = useSearchParams();
+  const projectname = searchParams.get('projectname') || '';
+  const profemail = searchParams.get('profemail') || '';
+  const projectId = searchParams.get('projectId') || '';
+
   const [formData, setFormData] = useState({
     studentname: '',
     degree: '',
@@ -51,26 +57,32 @@ export default function AlumniForm() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (!projectname || !profemail ||!projectId) {
+      toast.error('Missing projectname or profemail in URL');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const response = await axios.post('/api/applyjob', {
         studentname: formData.studentname,
-        degree: formData.degree,    
+        degree: formData.degree,
         description: formData.description,
         resume: formData.publicId,
+        projectId,
+        projectname, // from search params
+        profemail,   // from search params
       });
-      //
+
       if (!response) throw new Error('Submission failed');
 
       setFormData({ studentname: '', degree: '', description: '', publicId: '' });
       setErrors({ studentname: '', degree: '', description: '', publicId: '' });
       toast('Submitted successfully!');
-    } catch (error:any) {
+    } catch (error: any) {
       console.error('Error:', error);
-       toast.error(
-      error.response?.data?.error || "Submission failed. Please try again."
-    );
+      toast.error(error.response?.data?.error || "Submission failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -4,6 +4,8 @@ import { authOptions } from '../auth/[...nextauth]/options';
 import { Connectiondb } from '@/lib/dbconnect';
 import projectmodel from '@/model/project';
 
+
+
 interface RequestBody {
   projectname: string;
   description: string;
@@ -32,7 +34,6 @@ export async function POST(request: Request) {
       'projectname',
       'description',
       'publicId',
-      
       'profname',
     ];
     const missingFields = requiredFields.filter((field) => !body[field]);
@@ -100,7 +101,7 @@ export async function DELETE(request: Request) {
     }
 
     // Ownership check using email
-    if (project.ownerEmail !== session.user?.email) {
+    if (project.email !== session.user?.email) {
       return NextResponse.json(
         { error: 'You can delete only your own projects' },
         { status: 403 }
@@ -117,6 +118,35 @@ export async function DELETE(request: Request) {
     console.error('Error deleting project:', error);
     return NextResponse.json(
       { error: 'Failed to delete project', message: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH() {
+  const session: any = await getServerSession(authOptions);
+ console.log(session);
+ 
+  // ✅ role must be "student" and account must be verified
+  if (!session || session.user.role !== 'prof' || session.user.isVerified !== true) {
+    return NextResponse.json(
+      { error: 'Unauthorized. Only verified professor allowed.' },
+      { status: 401 }
+    );
+  }
+
+  try {
+    await Connectiondb();
+
+    const email = session.user?.email; // get email from session
+
+    const projects = await projectmodel.find({ email }).sort({ createdAt: -1 });
+
+    return NextResponse.json(projects, { status: 200 });
+  } catch (error: any) {
+    console.error('Error fetching projects:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch projects', message: error.message },
       { status: 500 }
     );
   }

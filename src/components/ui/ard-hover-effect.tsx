@@ -102,7 +102,7 @@ export const HoverEffect = ({
             View More
           </a>
           <Link
-            href={`/applyjob?projectname=${item.title}&email=${item.email}`}
+            href={`/applyjob?projectname=${item.title}&profemail=${item.email}`}
             rel="noopener noreferrer"
             className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition"
           >

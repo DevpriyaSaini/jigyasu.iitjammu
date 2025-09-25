@@ -5,6 +5,9 @@ export interface IApply extends Document {
   email: string;
   degree: string;
   description: string;
+  projectname:string;
+  projectId:string;
+  profemail:string;
   resume: string;
 }
 
@@ -15,6 +18,9 @@ const applySchema = new Schema<IApply>(
     email: { type: String, required: true },
     description: { type: String, required: true },
     resume: { type: String, required: true },
+    profemail: { type: String, required: true },
+    projectId: { type: String, required: true },
+    projectname: { type: String, required: true },
   },
   { timestamps: true }
 );
