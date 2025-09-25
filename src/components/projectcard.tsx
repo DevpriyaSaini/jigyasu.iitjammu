@@ -45,6 +45,7 @@ export function CardHoverEffectDemo() {
           title: project.projectname,
           description: project.description,
           email:project.email,
+          projectId:project._id,
           link: "#", // optionally replace with project link
           image: project.image,
           postedby: project.postedby,

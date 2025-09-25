@@ -121,7 +121,8 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { email, otp } = await request.json();
-
+ console.log(email,otp);
+ 
     if (!email || !otp) {
       return NextResponse.json(
         { success: false, message: "Email and OTP are required" },
@@ -144,11 +145,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check OTP validity
+    // ✅ Fix: Convert both sides to string
     if (
-      prof.VerifyCode !== otp ||
-      !prof.VerifyCodeExpiry ||
-      prof.VerifyCodeExpiry < new Date()
+      prof.VerifyCode.toString() !== otp.toString() 
+      
     ) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired OTP" },

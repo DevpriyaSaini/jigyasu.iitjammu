@@ -20,7 +20,8 @@ export async function POST(request: Request) {
     await Connectiondb();
 
     const session: any = await getServerSession(authOptions);
-
+     console.log(session,session);
+     
     //  Only verified students can apply
     if (!session || session.user.role !== 'student' || session.user.isVerified !== true) {
       return NextResponse.json(

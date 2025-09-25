@@ -19,6 +19,8 @@ export async function POST(request: Request) {
     await Connectiondb();
 
     const session: any = await getServerSession(authOptions);
+    console.log("session", session);
+    
 
     // ✅ role must be "prof" and account must be verified
     if (!session || session.user.role !== 'prof' || session.user.isVerified !== true) {
@@ -124,8 +126,8 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH() {
-  const session: any = await getServerSession(authOptions);
- console.log(session);
+  const session:any = await getServerSession(authOptions);
+ console.log("  session",session);
  
   // ✅ role must be "student" and account must be verified
   if (!session || session.user.role !== 'prof' || session.user.isVerified !== true) {

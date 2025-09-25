@@ -5,13 +5,14 @@ import ImageUpload from '@/components/ImageUpload';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
+import { log } from 'console';
 
 export default function AlumniForm() {
   const searchParams = useSearchParams();
   const projectname = searchParams.get('projectname') || '';
   const profemail = searchParams.get('profemail') || '';
   const projectId = searchParams.get('projectId') || '';
-
+   console.log({ projectname, profemail, projectId });
   const [formData, setFormData] = useState({
     studentname: '',
     degree: '',

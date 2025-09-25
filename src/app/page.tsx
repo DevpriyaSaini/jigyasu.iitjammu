@@ -4,20 +4,18 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from 'sonner';
 
-
-export default function LoginPage({}) {
+export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [role, setRole] = useState("student"); // 👈 Choose student/prof
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     const res = await signIn(`${role}-credentials`, {
       redirect: false,
@@ -25,19 +23,29 @@ export default function LoginPage({}) {
       password,
     });
 
+    setLoading(false);
+
     if (res?.error) {
-      setError(res.error);
+      // 🚫 Show error toast
+      toast.error(res.error || "Login failed");
+      return; // stay on login page
     }
 
-    setLoading(false);
-    router.push("/projects");
+    // ✅ Redirect based on role
+    if (role === "student") {
+      router.push("/project");
+    } else if (role === "prof") {
+      router.push("/uploaded-projects");
+    }
   };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-900">
+     
+
       {/* Background Image */}
       <Image
-        src="/iit.jammu.webp" // 👈 Save this in /public
+        src="/iit.jammu.webp"
         alt="IIT Jammu"
         fill
         priority
@@ -51,7 +59,7 @@ export default function LoginPage({}) {
       <div className="relative z-10 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-lg w-full max-w-md border border-white/20">
         <div className="text-center mb-6">
           <Image
-            src="/iit-jammu-01logo.webp" // 👈 Save this in /public
+            src="/iit-jammu-01logo.webp"
             alt="IIT Jammu Logo"
             width={80}
             height={80}
@@ -103,10 +111,6 @@ export default function LoginPage({}) {
             />
           </div>
 
-          {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          )}
-
           <button
             type="submit"
             disabled={loading}
@@ -119,9 +123,14 @@ export default function LoginPage({}) {
         <p className="text-center text-gray-300 text-sm mt-4">
           Only for IIT Jammu students & professors
         </p>
-        <Link className="text-center text-gray-300 text-2sm mt-4 ml-18" href="/register">Don't have account , <span className="text-blue-500">Register here</span></Link>
+        <Link
+          className="text-center text-gray-300 text-2sm mt-4 ml-18"
+          href="/register"
+        >
+          Don&apos;t have account?{" "}
+          <span className="text-blue-500">Register here</span>
+        </Link>
       </div>
-     
     </div>
   );
 }

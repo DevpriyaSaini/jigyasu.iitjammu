@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 
 export default function ProjectForm() {
   const data=useSession().data||{role:""};
-  console.log(data);
+  console.log("data",data);
   
   
   const [formData, setFormData] = useState({

@@ -11,8 +11,11 @@ export default function Verify() {
 
   // Extract from query string
   const email = searchParams.get("email");
-  const role = (searchParams.get("role") as "student" | "professor") || "student";
+  const role = (searchParams.get("role") as "student" | "prof") || "student";
   const studentname = searchParams.get("studentname");
+  const profname = searchParams.get("profname");
+  console.log({ email, role, studentname, profname });
+  
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,11 +25,6 @@ export default function Verify() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !studentname) {
-      setError("Missing details. Please restart the signup process.");
-      return;
-    }
-
     setLoading(true);
     setMessage("");
     setError("");
@@ -34,11 +32,17 @@ export default function Verify() {
     try {
       // Pick API endpoint dynamically
       const endpoint =
-        role === "student" ? "/api/student-sign-up" : "/api/professor-sign-up";
+        role === "student" ? "/api/student-sign-up" : "/api/prof-sign-up";
 
-      console.log("Verifying with:", { studentname, email, otp, endpoint });
+      // ✅ Choose correct name field
+      const payload =
+        role === "student"
+          ? { studentname, email, otp }
+          : { profname, email, otp };
 
-      const res = await axios.put(endpoint, { studentname, email, otp });
+      console.log("Verifying with:", payload, endpoint);
+
+      const res = await axios.put(endpoint, payload);
       setMessage(res.data.message);
 
       if (res.data.success) {
@@ -88,7 +92,7 @@ export default function Verify() {
           </p>
         </div>
 
-        {!email || !studentname ? (
+        {!email ? (
           <p className="text-red-400 text-center">
             Required details are missing in the verification link.
           </p>

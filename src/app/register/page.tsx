@@ -11,9 +11,9 @@ export default function SignupRedirectPage() {
 
   const handleRedirect = () => {
     if (role === "student") {
-      router.push("/student-sign-up");
+      router.push("/student-signup");
     } else {
-      router.push("/professor-sign-up");
+      router.push("/professor-signup");
     }
   };
 

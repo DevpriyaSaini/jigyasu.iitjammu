@@ -1,5 +1,5 @@
 import { Connectiondb } from "@/lib/dbconnect";
-import studentmodel from "@/model/studentlogin";
+import profModel from "@/model/prof";
 import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
@@ -13,15 +13,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send OTP email
-async function sendmail(name: string, email: string, otp: string) {
+// Function to send OTP email to professors
+async function sendProfMail(name: string, email: string, otp: string) {
   try {
     const mailOptions = {
       from: process.env.NEXT_PUBLIC_GMAIL_USER,
       to: email,
-      subject: "Verify Your Email - Student Portal",
+      subject: "Verify Your Email - Professor Portal",
       html: `
-        <h2>Welcome, ${name} 🎉</h2>
+        <h2>Welcome, Prof. ${name} 🎓</h2>
         <p>To complete your registration, please use the OTP below:</p>
         <h3 style="color:blue; font-size:22px;">${otp}</h3>
         <p>This OTP is valid for <b>10 minutes</b>. If you did not request this, please ignore.</p>
@@ -37,57 +37,56 @@ async function sendmail(name: string, email: string, otp: string) {
   }
 }
 
-//  Registration with OTP 
+// 📌 Registration with OTP for Professors
 export async function POST(request: NextRequest) {
   await Connectiondb();
 
   try {
-    const { studentname, email, password } = await request.json();
+    const { profname, email, password } = await request.json();
 
-    // Validate input
-    if (!studentname || !email || !password) {
+    if (!profname || !email || !password) {
       return NextResponse.json(
         { success: false, message: "All fields are required" },
         { status: 400 }
       );
     }
 
-    // Generate OTP and expiry (10 minutes)
+    // Generate OTP + expiry
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Check if user exists
-    let user = await studentmodel.findOne({ email });
+    // Check if professor exists
+    let prof = await profModel.findOne({ email });
 
-    if (user) {
-      if (user.isVerified) {
+    if (prof) {
+      if (prof.isVerified) {
         return NextResponse.json(
-          { success: false, message: "User already exists" },
+          { success: false, message: "Professor already exists" },
           { status: 400 }
         );
       } else {
-        // User exists but not verified: update details
-        user.studentname = studentname;
-        user.password = password;
-        user.VerifyCode = otp;
-        user.VerifyCodeExpiry = otpExpiry;
-        await user.save();
+        // Update details + resend OTP
+        prof.profname = profname;
+        prof.password = password;
+        prof.VerifyCode = otp;
+        prof.VerifyCodeExpiry = otpExpiry;
+        await prof.save();
 
-        await sendmail(studentname, email, otp);
+        await sendProfMail(profname, email, otp);
 
         return NextResponse.json(
           {
             success: true,
             message: "OTP resent. Please verify your email.",
-            userId: user._id,
+            profId: prof._id,
           },
           { status: 200 }
         );
       }
     } else {
-      // User does not exist: create new
-      user = await studentmodel.create({
-        studentname,
+      // New professor
+      prof = await profModel.create({
+        profname,
         email,
         password,
         isVerified: false,
@@ -95,27 +94,27 @@ export async function POST(request: NextRequest) {
         VerifyCodeExpiry: otpExpiry,
       });
 
-      await sendmail(studentname, email, otp);
+      await sendProfMail(profname, email, otp);
 
       return NextResponse.json(
         {
           success: true,
-          message: "User registered successfully. OTP sent to email.",
-          userId: user._id,
+          message: "Professor registered successfully. OTP sent to email.",
+          profId: prof._id,
         },
         { status: 200 }
       );
     }
   } catch (error: any) {
-    console.error("Error during registration:", error);
+    console.error("Error during professor registration:", error);
     return NextResponse.json(
-      { success: false, message: "Error registering user" },
+      { success: false, message: "Error registering professor" },
       { status: 500 }
     );
   }
 }
 
-// OTP Verification for Student
+// 📌 OTP Verification for Professors
 export async function PUT(request: NextRequest) {
   await Connectiondb();
 
@@ -129,41 +128,45 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const user = await studentmodel.findOne({ email });
-    if (!user) {
+    const prof = await profModel.findOne({ email });
+    if (!prof) {
       return NextResponse.json(
-        { success: false, message: "User not found" },
+        { success: false, message: "Professor not found" },
         { status: 404 }
       );
     }
 
-    if (user.isVerified) {
+    if (prof.isVerified) {
       return NextResponse.json(
-        { success: true, message: "User already verified" },
+        { success: true, message: "Professor already verified" },
         { status: 200 }
       );
     }
 
-    // Check OTP validity
-    if (user.VerifyCode !== otp || !user.VerifyCodeExpiry || user.VerifyCodeExpiry < new Date()) {
+    // ✅ Convert OTPs to string before comparing
+    if (
+      prof.VerifyCode.toString() !== otp.toString() ||
+      !prof.VerifyCodeExpiry ||
+      prof.VerifyCodeExpiry < new Date()
+    ) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired OTP" },
         { status: 400 }
       );
     }
 
-    // Mark user as verified
-    user.isVerified = true;
-    user.VerifyCode = "";
-    user.VerifyCodeExpiry = undefined;
-    await user.save();
+    // Mark as verified
+    prof.isVerified = true;
+    prof.VerifyCode = "";
+    prof.VerifyCodeExpiry = undefined;
+    await prof.save();
 
     return NextResponse.json(
       { success: true, message: "Email verified successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error verifying OTP:", error);
+    console.error("Error verifying professor OTP:", error);
     return NextResponse.json(
       { success: false, message: "Error verifying OTP" },
       { status: 500 }

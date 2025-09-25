@@ -28,7 +28,7 @@ export default function Page() {
       setProjects(res.data);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
-      toast.error('Failed to fetch projects');
+      toast.error('Failed to fetch projects',error.message);
     } finally {
       setLoading(false);
     }

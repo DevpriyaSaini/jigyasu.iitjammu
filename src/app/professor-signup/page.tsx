@@ -26,14 +26,11 @@ export default function ProfessorSignupPage() {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (data.success) {
+        router.push(`/verify?email=${email}&role=prof&profname=${profname}`);// redirect on success
+      } else {
         setError(data.message || "Signup failed");
-        setLoading(false);
-        return;
       }
-
-      // Redirect to login page after successful signup
-      router.push("/login");
     } catch (err: any) {
       setError(err.message || "Signup failed");
     } finally {

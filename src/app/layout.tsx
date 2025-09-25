@@ -30,12 +30,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-gray-900`}
       >
          
        <AuthProvider>
          <ThemeProvider>
-           <div className="fixed w-full top-0 z-50">
+           <div className="fixed w-full top-0 z-50 ">
         <NavbarDemo  />
       </div>
           {children}
