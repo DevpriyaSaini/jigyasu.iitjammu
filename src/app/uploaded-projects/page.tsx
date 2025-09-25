@@ -34,23 +34,21 @@ export default function Page() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
+const handleDelete = async (id: string) => {
+  if (!confirm("Are you sure you want to delete this project?")) return;
 
-    try {
-  const res = await axios.delete(`/api/applyjob/${id}`);
-     
-      
-      if (res.status === 200) {
-        setProjects(projects.filter((p) => p._id !== id));
-        toast.success('Project deleted successfully');
-      }
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      toast.error(error.response?.data?.error || "Submission failed. Please try again.");
-    } finally {
+  try {
+    const res = await axios.delete(`/api/upl-project?id=${id}`);
+
+    if (res.status === 200) {
+      setProjects((prev) => prev.filter((p) => p._id !== id));
+      toast.success("Project deleted successfully");
     }
-  };
+  } catch (error: any) {
+    console.error("Delete error:", error);
+    toast.error(error.response?.data?.error || "Failed to delete. Please try again.");
+  }
+};
 
    const handlepush=()=>{
     router.push(`/view-application?projectId=${projects[0]?._id}`);

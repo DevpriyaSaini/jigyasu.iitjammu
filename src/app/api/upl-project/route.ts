@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/options';
 import { Connectiondb } from '@/lib/dbconnect';
@@ -82,49 +82,66 @@ export async function GET() {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    // Get the logged-in session
     const session: any = await getServerSession(authOptions);
-
+    console.log("session", session);
     // ✅ Only verified professors can delete
-    if (!session || session.user.role !== 'prof' || session.user.isVerified !== true) {
+    if (!session || session.user.role !== "prof" || session.user.isVerified !== true) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only verified professors can delete projects.' },
+        { error: "Unauthorized. Only verified professors can delete applications." },
         { status: 401 }
       );
     }
 
     await Connectiondb();
-    const { id } = await request.json();
 
-    const project = await projectmodel.findById(id);
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    // Get id from URL query parameters (not from request body)
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    
+    console.log("Received ID from query params:", id);
+  
+    if (!id) {
+      return NextResponse.json(
+        { error: "Application ID (id) is required as query parameter" },
+        { status: 400 }
+      );
     }
 
-    // Ownership check using email
-    if (project.email !== session.user?.email) {
+    // Find application by id
+    const application = await projectmodel.findById(id);
+    if (!application) {
       return NextResponse.json(
-        { error: 'You can delete only your own projects' },
+        { error: "Application not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check ownership: Only the professor who posted the project can delete
+    if (application.email !== session.user.email) {
+      return NextResponse.json(
+        { error: "You can delete only applications for your projects" },
         { status: 403 }
       );
     }
 
+    // Delete the application
     await projectmodel.findByIdAndDelete(id);
 
     return NextResponse.json(
-      { success: true, message: 'Project deleted successfully' },
+      { success: true, message: "Application deleted successfully" },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error deleting project:', error);
+    console.error("Error deleting application:", error);
     return NextResponse.json(
-      { error: 'Failed to delete project', message: error.message },
+      { error: "Failed to delete application", message: error.message },
       { status: 500 }
     );
   }
 }
-
 export async function PATCH() {
   const session:any = await getServerSession(authOptions);
  console.log("  session",session);
